@@ -1,0 +1,8 @@
+calf	sex	sire	dam	wt
+1	Male	NA	NA	354
+2	Female	NA	NA	251
+3	Male	1	NA	327
+4	Female	1	NA	328
+5	Male	1	2	301
+6	Female	NA	2	270
+7	Male	NA	NA	330
