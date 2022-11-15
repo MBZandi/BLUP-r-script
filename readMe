@@ -4,7 +4,14 @@ mbzandi@znu.ac.ir
 This is an R scripte to run BLUP 
 With Single fixed effect and single Random effect
 
-You just need to fix the data and pedigree file in data.txt format as below:
+
+Put the all the following docs in one folder:
+Blup-run.R
+BLUP1.exe
+data.txt
+
+
+So you just need to fix the data and pedigree file in data.txt format as below:
 
 calf	sex	sire	dam	wt
 1	Male	NA	NA	354
@@ -18,11 +25,29 @@ then run the Blup-run.R script in R and see the result would be created in your 
 Which Design the X and Z matrixes automaticlly
 
 
+Finally you get the results as follow:
+BV.txt ==> include the estimated Breeding Value(BV) of each animal in the pedgigree
+Fixed.txt ==> include the estimated effect of Fixed factors for all subclases
+h2.txt ==> include the Predicted Heritabilty of the trait
+VCE.txt ==> include the Pridicted (Co)Variances, line one is Genetic Variance and second line is Environment variance
+blupoutput.txt ==> include the estimated Breeding Value(BV), Etimated fixed effect based on MME
+
+
+**************************************
 Notice:
 
-Before run this program please install the package of "Geneticsped" via the following command in R:
+Before run this program please install R packages include: "Geneticsped" and "pedigree" via the following command in R:
+
+# install package "GeneticsPed")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("GeneticsPed")
+
+
+##install package "pedigree"
+install.packages("pedigree")
+
+
+
 
