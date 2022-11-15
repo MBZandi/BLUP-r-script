@@ -1,9 +1,11 @@
 ##### clean the memory
+
 rm(list=ls())
 
+#### open your script
+source("BLUP1.exe")
 
-source("blup.exe")
 
+### defile the prior of MME ==>> alpha=(varE, varG)
+sol=alpha(100,200)
 
-sol1=ammy(100,200)
-write.table(sol1,"AnimalModelOut-1.txt")#, header=T)
