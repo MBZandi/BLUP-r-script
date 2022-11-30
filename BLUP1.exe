@@ -1,142 +1,178 @@
 ##### clean the memory
 rm(list=ls())
 alpha=function(sigma2e , sigma2a)
-
+  
 {
-library(GeneticsPed)
-library(pedigree)
+  library(GeneticsPed)
+  library(pedigree)
+  
+  data <- read.table("data.txt", header=T)
+  # data <- read.table(file.choose())
+  
+  
+  data
+  
+  #setwd(choose.dir())
+  #save(data,file="BLUP.RData")
+  
+  
+  
+  
+  
+  (x <- Pedigree(x=data, subject="calf", ascendant=c("sire", "dam"),
+                 ascendantSex=c("Male", "Female"), sex="sex"))
+  
+  ##   yij = si + aj + eij ##
+  
+  ## Observed/measured phenotype records:
+  
+  (y <- x$bw)
+  
+  
+  #design X and Z matrixex based on th data
+  desgn=function(v) {if(is.numeric(v)) {vn=v}
+    else
+    {vn=as.numeric(factor(v))}
+    mrow=length(vn)
+    mcol=max(vn)
+    x=matrix(data=c(0), nrow=mrow, ncol=mcol)
+    for(i in 1:mrow)
+    {ic=vn[i]
+    x[i,ic]=1}
+    return(x)}
+  
+  
+  x$sex=as.factor(x$sex)
+  x$sex
+  X=desgn(x$sex)
+  head(data)
+  head(X)
+  
+  x$animal=as.factor(x$calf)
+  Z=desgn(x$calf)
+  
+  #f=as.matrix(f)
+  #b=add.Inds(x)
+  #jd=function(n,m) {matrix(0,nrow=n, ncol=m)}
+  #k=jd(nrow(f),nrow(b)-ncol(f))
+  
+  
+  
+  
+  
+  ## Design matrix (X) for sex effect:
+  #X <- model.matrix(~ x$sex - 1)
+  #X
+  
+  
+  
+  
+  ## Design matrix (Z) for additive genetic effect.
+  
+  #(Z <- model.matrix(object=x, y=x$bw, id=x$calf))
+  
+  
+  
+  ## Left hand side (LHS) of MME without G-1:
+  LHS <- rbind(cbind(t(X) %*% X, t(X) %*% Z),
+               cbind(t(Z) %*% X, t(Z) %*% Z))
+  LHS 
+  ## or more efficiently
+  
+  (LHS <- rbind(cbind(crossprod(X), crossprod(X, Z)),
+                cbind(crossprod(Z, X), crossprod(Z))))
+  
+  RHS <- rbind(cbind(t(X) %*% y),
+               cbind(t(Z) %*% y))
+  
+  RHS
+  
+  ##  and adding G-1, which is in this case A-1a and 
+  ##  a= Ve/Va=40/20=2
+  
+  ## We want Ainv for all individuals in the pedigree not only individuals
+  ## with records
+  x <- extend(x)
+  x 
+  Ainv <- inverseAdditive(x=x)
+  head(data)
+  ped=data.frame(x$calf,x$sire,x$dam)
+  colnames(ped)=c("ID", "sire", "dam")
+  head(ped)
+  #A-ped=makeA(ped,which=c(rep(FALSE,nrow(ped)),rep(TRUE,2)))
 
-data <- read.table("data.txt", header=T)
-# data <- read.table(file.choose())
+  #A-ped=makeA(ped)
+  
+  
+
+  # sigma2a <- 20
+  # sigma2e <- 40
+  alpha <- sigma2e / sigma2a
+  q <- nIndividual(x)
+  p <- nrow(LHS) - q
+  (LHS[(p + 1):(p + q), (p + 1):(p + q)] <-
+      LHS[(p + 1):(p + q), (p + 1):(p + q)] + Ainv * alpha)
+  
+  ## Right hand side (RHS) of MME:
+  
+  RHS <- rbind(t(X) %*% y,
+               t(Z) %*% y)
+  RHS
+  ## or more efficiently
+  RRHS <- rbind(crossprod(X, y),
+                crossprod(Z, y))
+  RRHS
+  t(RHS)
+  
+  #sol <- solve(LHS) %*% RHS
+  #sol
+  ## or more efficiently
+  sol <- solve(LHS, RHS)
+  sol
+  
+  sol1=sol[-c(1:ncol(X))]
+  sol_fix=sol[c(1:ncol(X))]
+  
+  sol_fix=as.matrix(sol_fix)
+  colnames(sol_fix) <- c("Fixed_ID  Estimation")
+  row.names(sol_fix) <- c(1:ncol(X))
+  xsex=unique(x$sex)
+  
 
 
-data
-
-#setwd(choose.dir())
-#save(data,file="BLUP.RData")
-
-
-
-
-
-(x <- Pedigree(x=data, subject="calf", ascendant=c("sire", "dam"),
- ascendantSex=c("Male", "Female"), sex="sex"))
- 
- ##   yij = si + aj + eij ##
- 
- ## Observed/measured phenotype records:
- 
- (y <- x$wt)
-
-desgn=function(v) {if(is.numeric(v)) {vn=v}
-else
-{vn=as.numeric(factor(v))}
-mrow=length(vn)
-mcol=max(vn)
-x=matrix(data=c(0), nrow=mrow, ncol=mcol)
-for(i in 1:mrow)
-{ic=vn[i]
-x[i,ic]=1}
-return(x)}
-
-
-x$sex=as.factor(x$sex)
-X=desgn(x$sex)
-X
-
-x$animal=as.factor(x$calf)
-f=desgn(x$calf)
-f
-#f=as.matrix(f)
-#b=add.Inds(x)
-#jd=function(n,m) {matrix(0,nrow=n, ncol=m)}
-#k=jd(nrow(f),nrow(b)-ncol(f))
-
-Z=f
-Z
-
-
- 
- ## Design matrix (X) for sex effect:
- #X <- model.matrix(~ x$sex - 1)
-#X
-
-
-
- 
- ## Design matrix (Z) for additive genetic effect.
- 
- #(Z <- model.matrix(object=x, y=x$wt, id=x$calf))
-y 
-
-
-
- ## Left hand side (LHS) of MME without G-1:
- LHS <- rbind(cbind(t(X) %*% X, t(X) %*% Z),
-              cbind(t(Z) %*% X, t(Z) %*% Z))
-LHS 
- ## or more efficiently
- 
- (LHS <- rbind(cbind(crossprod(X), crossprod(X, Z)),
- cbind(crossprod(Z, X), crossprod(Z))))
- 
-RHS <- rbind(cbind(t(X) %*% y),
-              cbind(t(Z) %*% y))
-
-RHS
-
-##  and adding G-1, which is in this case A-1a and 
-##  a= Ve/Va=40/20=2
- 
-## We want Ainv for all individuals in the pedigree not only individuals
-## with records
-x <- extend(x)
-x 
- Ainv <- inverseAdditive(x=x)
-Ainv 
-# sigma2a <- 20
-# sigma2e <- 40
- alpha <- sigma2e / sigma2a
- q <- nIndividual(x)
- p <- nrow(LHS) - q
- (LHS[(p + 1):(p + q), (p + 1):(p + q)] <-
-   LHS[(p + 1):(p + q), (p + 1):(p + q)] + Ainv * alpha)
-   
-   ## Right hand side (RHS) of MME:
-   
-   RHS <- rbind(t(X) %*% y,
-                t(Z) %*% y)
-RHS
-    ## or more efficiently
-    RRHS <- rbind(crossprod(X, y),
-                  crossprod(Z, y))
-RRHS
- t(RHS)
- 
- sol <- solve(LHS) %*% RHS
- sol
- ## or more efficiently
- sol <- solve(LHS, RHS)
- sol
-
-sol1=sol[-c(1:ncol(X))]
-sol_fix=sol[c(1:ncol(X))]
-
-sol1
- var_BV=var(sol1)
- var_Phen=var(y)
- 
- h2=(var_BV/var_Phen)
- h2
- 
-VCE=c(var_BV,var_Phen, h2) 
-write.table(sol,"blupoutput.txt", col.names = NA, quote = F)
-write.table(sol_fix,"Fixed.txt")
-
-write.table(sol1,"BV.txt")
-
-write.table(h2,"h2.txt")
-write.table(VCE,"VCE.txt") #,  row.names=(Vg,Vp,h2))
-
-
- return(sol)}
+  
+  
+  sol1
+  sol1=as.matrix(sol1)
+  colnames(sol1) <- c("Animal   -  Breeding_Value")
+  row.names(sol1) <- c(1:nrow(x))
+  
+  var_BV=var(sol1)
+  var_Phen=var(y)
+  
+  h2=(var_BV/var_Phen)
+  
+  h2=as.matrix(h2)
+  row.names(h2) <- c("h2")
+  colnames(h2) <- c("      Heritability")
+  #h2
+  
+  VCE=c(var_BV,var_Phen, h2) 
+  VCE=as.matrix(VCE)
+  
+  row.names(VCE) <- c("Var-BV", "Var-Envi" , "h2")
+  colnames(VCE) <- c("        Variance-Covariance Estimation")
+  
+   # VCE
+  
+  
+  #write.table(sol,"blupoutput.txt", col.names = NA, quote = F)
+  write.table(sol_fix,"Fixed.txt", sep="\t", quote = FALSE)
+  
+  write.table(sol1,"BV.txt", quote = FALSE)
+  
+  write.table(h2,"h2.txt", quote = FALSE)
+  write.table(VCE,"VCE.txt", quote = FALSE) #,  row.names=(Vg,Vp,h2))
+  
+  
+  return(sol)}
